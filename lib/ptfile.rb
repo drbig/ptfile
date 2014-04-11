@@ -83,15 +83,23 @@ module PTFile
     # Patterns are also held sequentially, so to get the actual number of
     # patterns defined we need to find the max number in the patterns_table,
     # and then adjust it to be 0-indexed.
+    #
+    # Commands are in fact unsigned int8 values, read here as a string for
+    # speed. If you want to have values use:
+    # array   :commands, :type => :uint8, :initial_length => 1024
     array     :patterns, :initial_length => lambda { pattern_table.max - 1} do
-      array   :commands, :type => :uint8, :initial_length => 1024
+      string  :commands, :read_length => 1024
     end
 
     # Each sample's data is written in sequence, and length of each sample has
     # to be read from samples_lengths array.
+    #
+    # Samples are in fact signed int8 values, read here as a string for
+    # speed. If you, for whatever insane reason, want to have values, use:
+    # array   :data, :type => :int8,\
+    #   :initial_length => lambda { samples_lengths[index] }
     array     :samples, :initial_length => :samples_count do
-      array   :data, :type => :int8,\
-        :initial_length => lambda { samples_lengths[index] }
+      string  :data, :read_length => lambda { samples_lengths[index] }
     end
 
     # Clear everything
