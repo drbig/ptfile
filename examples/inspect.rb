@@ -17,8 +17,8 @@ ARGV.each do |path|
   puts "   FILE: #{path}"
   begin
     mod = File.open(path) {|f| PTFile.read(f) }
-  rescue EOFError
-    puts "  ERROR: EOF reached, please investigate or report"
+  rescue IOError
+    puts "  ERROR: IO error, please investigate or report"
     errors += 1
   else
     if mod.sane?
