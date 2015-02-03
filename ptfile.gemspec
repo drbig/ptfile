@@ -20,7 +20,7 @@ Gem::Specification.new do |gem|
 
   gem.add_dependency 'bindata', '~> 2.0'
 
-  gem.add_development_dependency 'rspec', '~> 2.4'
+  gem.add_development_dependency 'rspec', '~> 3'
   gem.add_development_dependency 'rubygems-tasks', '~> 0.2'
   gem.add_development_dependency 'yard', '~> 0.8'
 end

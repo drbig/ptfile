@@ -1,7 +1,12 @@
 require 'rspec'
 require 'ptfile'
 
-FILES = %w{test1 test2}.collect{|e| File.expand_path('../' + e + '.mod', __FILE__) }
+FILES = %w{test1 test2 test3}\
+  .collect{|e| File.expand_path('../' + e + '.mod', __FILE__) }
+
+RSpec.configure do |cfg|
+  cfg.expect_with(:rspec) {|c| c.syntax = [:should, :expect] }
+end
 
 describe PTFile::Magic do
   magic = nil
@@ -18,7 +23,23 @@ describe PTFile::Magic do
 
     it 'returns correct magic string' do
       magic.extra.should eq 'M.K.'
-      magic.has_magic?.should be_true
+      magic.has_magic?.should eq true
+    end
+  end
+
+  context 'with small table file' do
+    it 'reads a file' do
+      magic = File.open(FILES[2]) {|f| PTFile::Magic.read(f) }
+      magic.should_not be_nil
+    end
+
+    it 'returns correct number of samples' do
+      magic.samples.should eq 15
+    end
+
+    it 'returns correct magic string' do
+      magic.extra.should eq 'FLT4'
+      magic.has_magic?.should eq true
     end
   end
 end
@@ -82,6 +103,55 @@ describe PTFile::Module do
       mod.samples.length.should eq 14
     end
   end
+
+  context 'with small table file' do
+    it 'initializes' do
+      mod = PTFile::Module.new(:sample_table_size => 15, :has_magic => true)
+      mod.should_not be_nil
+    end
+
+    it 'reads a file' do
+      File.open(FILES[2]) {|f| mod.read(f) }
+    end
+
+    it 'parses the mod name correctly' do
+      mod.title.should_not match(/[^[:print:]]/)
+      mod.title.should eq 'generation ii'
+    end
+
+    it 'parses the sample info table correctly' do
+      mod.sample_table.each do |s|
+        s.name.should_not match(/[^[:print:]]/)
+        s.sample_length.should be >= 0
+        s.sample_length.should be <= 65535
+        s.volume.should be >= 0
+        s.volume.should be <= 64
+        s.repeat_offset.should be >= 0
+        s.repeat_length.should be >= 0
+        if s.sample_length > 1
+          s.repeat_offset.should be <= s.sample_length
+          s.repeat_length.should be <= (s.sample_length - s.repeat_offset)
+        end
+      end
+    end
+
+    it 'parses the sample data correctly' do
+      mod.samples.length.should eq mod.samples_count
+      mod.samples.each_with_index do |s,i|
+        s.length.should eq mod.sample_table[i].sample_length
+      end
+    end
+
+    it 'validates data correctly' do
+      mod.sane?.should eq true
+    end
+
+    it 'clears the object properly' do
+      mod.clear
+      mod.samples_count.should eq 0
+      mod.samples_lengths.should eq []
+    end
+  end
 end
 
 describe PTFile do
@@ -94,5 +164,7 @@ describe PTFile do
     mod.title.should eq 'Power X'
     mod = File.open(FILES[1]) {|f| PTFile.read(f) }
     mod.title.should eq 'the driver'
+    mod = File.open(FILES[2]) {|f| PTFile.read(f) }
+    mod.title.should eq 'generation ii'
   end
 end
